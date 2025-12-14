@@ -1,8 +1,8 @@
-# 旅游智能助手 MCP 项目
+# 旅游攻略图片生成工具
 
-## 项目概述
+## 概述
 
-这是一个基于 **MCP（Model Context Protocol）协议**的工具集合：
+这是一个基于 **MCP（Model Context Protocol）协议**的工具：
 
 - 生成旅游攻略长图（竖版海报）
 - 发布图文笔记到小红书
