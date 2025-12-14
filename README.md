@@ -2,27 +2,16 @@
 
 ## 项目概述
 
-这是一个基于 **MCP（Model Context Protocol）协议**的旅游智能助手系统。它集成了多个功能模块，旨在帮助用户高效地完成旅游规划、景点查询、路线规划、天气查询、图片生成以及小红书内容发布等一系列操作。
+这是一个基于 **MCP（Model Context Protocol）协议**的工具集合：
+
+- 生成旅游攻略长图（竖版海报）
+- 发布图文笔记到小红书
 
 ## 功能模块
 
-本项目包含以下五个核心 MCP 服务器模块，每个模块都提供了一组特定的工具（Tool）供调用。
+本项目包含以下两个 MCP 服务器模块，每个模块都提供了一组特定的工具（Tool）供调用。
 
-### 1. 🏛️ 景点数据读取服务器 (`crawler/places_read_mcp.py`)
-
-**功能：** 负责读取和管理本地存储的景点数据，支持按省份、城市、关键词等多种条件进行查询。
-
-| 可用工具 | 描述 |
-| :--- | :--- |
-| `get_spots_by_province` | 获取指定省份的所有景点信息。 |
-| `get_spots_by_city` | 获取指定城市的所有景点信息。 |
-| `get_all_provinces` | 获取所有有数据的省份列表。 |
-| `get_cities_in_province` | 获取指定省份下的所有城市列表。 |
-| `search_spots_by_keyword` | 根据关键词搜索景点。 |
-
-**数据存储：** 景点数据以 JSON 格式存储，文件结构遵循 `省份/城市/景点.json` 的组织方式。
-
-### 2. 🎨 图片生成服务器 (`middleware/generate_mcp.py`)
+### 1. 🎨 图片生成服务器 (`middleware/generate_mcp.py`)
 
 **功能：** 调用 Nano Banana API 生成旅游攻略长图（竖版海报），特别支持四行格式的详细图片描述，适用于小红书等平台。
 
@@ -42,58 +31,38 @@
 
 | 可用工具 | 描述 |
 | :--- | :--- |
-| `publish_xiaohongshu_video` | 发布视频笔记到小红书。 |
 | `publish_xiaohongshu_images` | 发布图文笔记到小红书。 |
-| `generate_xiaohongshu_content` | 根据景点信息生成小红书笔记内容（标题、正文、话题）。 |
-| `batch_publish_xiaohongshu` | 批量发布小红书笔记。 |
+| `validate_xiaohongshu_content` | 审核标题/正文/话题是否超限。 |
 
 **依赖：** 需要已登录的浏览器会话（如通过 Selenium 维护）。
-
-### 4. 🗺️ 路径规划服务器 (`middleware/route_planning_mcp.py`)
-
-**功能：** 基于高德地图 API 实现路径规划功能，支持多种出行方式，并支持多点路径规划。
-
-| 可用工具 | 描述 |
-| :--- | :--- |
-| `route_planning` | 路径规划（支持驾车、步行、骑行、电动车、公交）。 |
-| `search_places` | 搜索地点。 |
-| `multi_point_route` | 多点路径规划。 |
-
-**支持出行方式：** 驾车 (`driving`)、步行 (`walking`)、骑行 (`bicycling`)、电动车 (`electrobike`)、公交 (`transit`)。
-
-### 5. 🌤️ 天气查询服务器 (`crawler/weather_mcp.py`)
-
-**功能：** 基于高德地图 API 查询指定地点的实时天气和天气预报信息。
-
-| 可用工具 | 描述 |
-| :--- | :--- |
-| `get_current_weather` | 查询实时天气。 |
-| `get_weather_forecast` | 查询天气预报。 |
-| `get_complete_weather` | 查询完整天气信息（实时+预报）。 |
-| `search_city_weather` | 搜索城市并查询天气。 |
 
 ## 快速开始
 
 ### 环境要求
 
-*   Python 3.8+
-*   高德地图 API Key（用于路径规划和天气查询）
-*   Nano Banana API Key（用于图片生成）
+*   Python 3.10+
+*   Nano Banana API Token（用于图片生成）
+*   Chrome + ChromeDriver（用于小红书发布；或使用 Selenium Manager 自动解析）
 
 ### 安装依赖
 
 使用 `pip` 安装所需的 Python 库：
 
 ```bash
-pip install mcp fastmcp httpx pydantic selenium
+pip install mcp requests selenium
 ```
 
 ### 配置步骤
 
 #### 1. 获取 API Key
 
-*   **高德地图 API Key：** 访问 [高德开放平台](https://lbs.amap.com/) 注册并获取。
-*   **Nano Banana API Key：** 访问 [acedata.cloud](https://acedata.cloud/) 注册并获取（需在 `middleware/generate_mcp.py` 中修改 `token` 变量）。
+*   **Nano Banana API Token：** 访问 [acedata.cloud](https://acedata.cloud/) 注册并获取。
+
+并通过环境变量配置：
+
+```bash
+export NANO_BANANA_API_TOKEN="你的token"
+```
 
 #### 2. 配置 Cline MCP 设置
 
@@ -104,39 +73,6 @@ pip install mcp fastmcp httpx pydantic selenium
 ```json
 {
   "mcpServers": {
-    "amap-route-planning": {
-      "autoApprove": ["multi_point_route", "route_planning", "search_places"],
-      "disabled": false,
-      "timeout": 600,
-      "type": "stdio",
-      "command": "你的Python解释器路径",
-      "args": ["你的项目路径\\middleware\\route_planning_mcp.py"],
-      "cwd": "你的项目路径",
-      "env": {
-        "AMAP_API_KEY": "你的高德地图API_Key"
-      }
-    },
-    "amap-weather": {
-      "autoApprove": ["get_current_weather", "get_weather_forecast", "get_complete_weather", "search_city_weather"],
-      "disabled": false,
-      "timeout": 300,
-      "type": "stdio",
-      "command": "你的Python解释器路径",
-      "args": ["你的项目路径\\crawler\\weather_mcp.py"],
-      "cwd": "你的项目路径",
-      "env": {
-        "AMAP_API_KEY": "你的高德地图API_Key"
-      }
-    },
-    "places_read": {
-      "autoApprove": ["get_spots_by_province", "get_spots_by_city", "get_all_provinces", "get_cities_in_province", "search_spots_by_keyword"],
-      "disabled": false,
-      "timeout": 300,
-      "type": "stdio",
-      "command": "你的Python解释器路径",
-      "args": ["你的项目路径\\crawler\\places_read_mcp.py"],
-      "cwd": "你的项目路径"
-    },
     "image-generator": {
       "autoApprove": ["generate_image_nano_banana"],
       "disabled": false,
@@ -145,9 +81,12 @@ pip install mcp fastmcp httpx pydantic selenium
       "command": "你的Python解释器路径",
       "args": ["你的项目路径\\middleware\\generate_mcp.py"],
       "cwd": "你的项目路径"
+      "env": {
+        "NANO_BANANA_API_TOKEN": "你的token"
+      }
     },
     "xiaohongshu-publisher": {
-      "autoApprove": ["publish_xiaohongshu_video", "publish_xiaohongshu_images", "generate_xiaohongshu_content", "batch_publish_xiaohongshu"],
+      "autoApprove": ["publish_xiaohongshu_images", "validate_xiaohongshu_content"],
       "disabled": false,
       "timeout": 300,
       "type": "stdio",
@@ -166,52 +105,11 @@ pip install mcp fastmcp httpx pydantic selenium
 | Python 解释器路径 | `E:\APP\Anaconda22\envs\mcp\python.exe` | `/path/to/your/python3` |
 | 项目路径 | `E:\PostGraduate\courses\yingxiang\Finaltask\MCPProject` | `/path/to/your/MCPProject` |
 
-### 3. 数据准备
-
-创建景点数据目录结构 `data/`，并按照 `省份/城市/景点.json` 的结构组织数据。
-
-```
-data/
-├── 江苏省/
-│   ├── 苏州市/
-│   │   ├── 拙政园.json
-│   │   └── 虎丘.json
-│   └── 南京市/
-│       └── 中山陵.json
-└── 浙江省/
-    └── 杭州市/
-        └── 西湖.json
-```
-
-**景点数据格式示例（JSON）：**
-
-```json
-{
-  "name": "西湖",
-  "province": "浙江省",
-  "city": "杭州市",
-  "description": "杭州西湖风景名胜区，著名的淡水湖泊，中国十大风景名胜之一。",
-  "rating": 4.8,
-  "address": "杭州市西湖区",
-  "tags": ["湖泊", "风景区", "文化遗产"],
-  "recommended_hours": 3,
-  "是否免费": true
-}
-```
-
 ## 使用示例
 
 以下是使用各个模块工具的 Python 示例代码：
 
-### 1. 查询景点信息
-
-```python
-# 查询苏州的景点
-spots = get_spots_by_city("江苏省", "苏州市")
-print(f"找到 {spots['count']} 个景点")
-```
-
-### 2. 生成旅游攻略图片
+### 1. 生成旅游攻略图片
 
 ```python
 # 生成苏州一日游攻略图片
@@ -225,41 +123,15 @@ result = generate_image_nano_banana(
 )
 ```
 
-### 3. 路径规划
+### 2. 发布到小红书
 
 ```python
-# 从拙政园到虎丘的驾车路线
-route = route_planning(
-    origin="拙政园",
-    destination="虎丘",
-    route_type="driving",
-    city="苏州市"
-)
-```
-
-### 4. 天气查询
-
-```python
-# 查询苏州实时天气
-weather = get_current_weather("苏州市")
-```
-
-### 5. 发布到小红书
-
-```python
-# 1. 生成小红书内容
-content = generate_xiaohongshu_content(
-    province="江苏省",
-    city="苏州市",
-    style="旅游攻略"
-)
-
-# 2. 发布图文笔记
+# 发布图文笔记
 publish_xiaohongshu_images(
     file_path="generated_images/苏州旅游攻略.png",
-    title=content["title"],
-    content=content["content"],
-    topics=content["topics"]
+  title="苏州一日游攻略｜超出片路线",
+  content="整理了一条超适合拍照的一日游路线，照着走不踩雷。",
+  topics=["#苏州旅游", "#旅游攻略", "#周末去哪儿", "#拍照打卡"]
 )
 ```
 
@@ -280,8 +152,8 @@ publish_xiaohongshu_images(
 在运行 MCP 服务器之前，建议设置以下环境变量：
 
 ```bash
-# 设置高德地图 API Key
-export AMAP_API_KEY="你的高德地图API_Key"
+# 设置 Nano Banana API Token
+export NANO_BANANA_API_TOKEN="你的token"
 
 # 设置 Python 路径（如果需要）
 export PYTHONPATH="你的项目路径:$PYTHONPATH"
@@ -289,7 +161,7 @@ export PYTHONPATH="你的项目路径:$PYTHONPATH"
 
 ## 注意事项
 
-*   **API 限制：** 高德地图 API 和 Nano Banana API 都有每日调用次数或使用限制，请注意遵守服务商的使用条款。
+*   **API 限制：** Nano Banana API 可能有调用限制，请注意遵守服务商的使用条款。
 *   **小红书发布：**
     *   需要已登录的浏览器会话。
     *   需要安装 Chrome 浏览器和对应版本的 ChromeDriver。
@@ -320,19 +192,16 @@ export PYTHONPATH="你的项目路径:$PYTHONPATH"
 
 ```
 MCPProject/
-├── data/                    # 景点数据目录
+├── data/                    # 可选：你自己的素材/数据目录
 ├── generated_images/        # 生成的图片
 ├── cline_mcp_settings.json  # Cline 配置文件
 ├── publisher/               # 发布相关 MCP
 │   └── publish_mcp.py        # 小红书发布服务器
-├── crawler/                 # 读取/抓取类 MCP（本项目：读取本地数据/天气）
-│   ├── places_read_mcp.py    # 景点读取服务器
-│   └── weather_mcp.py        # 天气查询服务器
 ├── middleware/              # 通用中间层/工具代码
 │   ├── upload_utils.py       # 小红书上传/发布相关工具
 │   └── web_utils.py          # Selenium/浏览器工具
 │   ├── generate_mcp.py       # 图片生成服务器
-│   └── route_planning_mcp.py # 路径规划服务器
+│   └── (其他工具代码)
 └── README.md                # 项目说明文档
 ```
 
